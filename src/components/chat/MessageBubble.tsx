@@ -1,4 +1,4 @@
-import { Bot, User } from 'lucide-react';
+import { Bot, User, MessageSquare } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message, Thread } from '../../types';
@@ -12,7 +12,19 @@ interface MessageBubbleProps {
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.role === 'user';
   const allThreads = useAppStore((state) => state.threads);
+  const setCurrentThread = useAppStore((state) => state.setCurrentThread);
   const threads = allThreads.filter((t: Thread) => t.parentMessageId === message.id);
+  
+  // Find the thread this message belongs to (if it's a thread response)
+  const parentThread = message.threadId 
+    ? allThreads.find((t: Thread) => t.id === message.threadId)
+    : null;
+
+  const handleViewThread = () => {
+    if (message.threadId) {
+      setCurrentThread(message.threadId);
+    }
+  };
 
   return (
     <div
@@ -43,10 +55,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           </div>
         </div>
 
-        {/* Thread indicator */}
-        {message.threadId && (
-          <div className="mt-1 text-xs text-primary">
-            Thread response
+        {/* Thread response indicator with link back to thread */}
+        {message.threadId && parentThread && (
+          <div className="mt-1">
+            <button
+              onClick={handleViewThread}
+              className="text-xs text-primary hover:underline flex items-center gap-1"
+            >
+              <MessageSquare size={12} />
+              View thread: "{parentThread.selectedText.slice(0, 30)}{parentThread.selectedText.length > 30 ? '...' : ''}"
+            </button>
           </div>
         )}
 

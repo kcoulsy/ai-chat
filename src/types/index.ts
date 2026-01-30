@@ -36,12 +36,17 @@ export interface Marker {
   timestamp: number;
 }
 
-export type Theme = 'light' | 'dark' | 'system';
+export const themeNames = ['amethyst-haze', 'coffee'] as const;
+
+export type ThemeName = typeof themeNames[number];
+
+export type ThemeMode = 'light' | 'dark' | 'system';
 
 export interface AppSettings {
   openaiApiKey: string;
   model: string;
-  theme: Theme;
+  theme: ThemeName;
+  themeMode: ThemeMode;
 }
 
 export const categoryColors: Record<MarkerCategory, string> = {

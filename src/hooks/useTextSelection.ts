@@ -28,6 +28,12 @@ export function useTextSelection() {
           clearTimeout(hideTimeoutRef.current);
         }
         hideTimeoutRef.current = setTimeout(() => {
+          // Check if focus is inside the floating toolbar
+          const activeElement = document.activeElement;
+          const toolbar = document.querySelector('[data-floating-toolbar]');
+          if (toolbar && (toolbar.contains(activeElement) || activeElement?.closest('[data-floating-toolbar]'))) {
+            return;
+          }
           clearSelection();
         }, 200);
         return;

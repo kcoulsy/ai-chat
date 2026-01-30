@@ -9,29 +9,24 @@ interface FloatingToolbarProps {
   rect: DOMRect;
   messageId: string;
   onClose: () => void;
+  onCreateThread: (text: string, parentMessageId: string) => void;
 }
 
-export function FloatingToolbar({ selectedText, rect, messageId, onClose }: FloatingToolbarProps) {
+export function FloatingToolbar({ selectedText, rect, messageId, onClose, onCreateThread }: FloatingToolbarProps) {
   const [showMarkerDialog, setShowMarkerDialog] = useState(false);
   const [markerLabel, setMarkerLabel] = useState('');
   const [markerCategory, setMarkerCategory] = useState<MarkerCategory>('note');
   const { addMarker } = useMarkers();
-  const createThread = useAppStore((state) => state.createThread);
   const currentChatId = useAppStore((state) => state.currentChatId);
-  const setCurrentThread = useAppStore((state) => state.setCurrentThread);
 
   const toolbarRef = useRef<HTMLDivElement>(null);
 
   const handleCreateThread = () => {
     if (!currentChatId) return;
     
-    const context = prompt(`What would you like to explore about: "${selectedText.slice(0, 50)}..."?`);
-    if (context && context.trim()) {
-      const threadId = createThread(currentChatId, messageId, selectedText, context.trim());
-      setCurrentThread(threadId);
-      onClose();
-      window.getSelection()?.removeAllRanges();
-    }
+    onCreateThread(selectedText, messageId);
+    onClose();
+    window.getSelection()?.removeAllRanges();
   };
 
   const handleAddMarker = () => {
@@ -52,6 +47,7 @@ export function FloatingToolbar({ selectedText, rect, messageId, onClose }: Floa
   return (
     <div
       ref={toolbarRef}
+      data-floating-toolbar
       className="fixed z-50 bg-popover rounded-lg shadow-lg border border-border p-2"
       style={{ top: `${top}px`, left: `${left}px` }}
     >

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useChat } from '../../hooks/useChat';
@@ -10,10 +10,24 @@ import { useTextSelection } from '../../hooks/useTextSelection';
 
 export function ChatPanel() {
   const [input, setInput] = useState('');
-  const { currentChatId } = useAppStore();
+  const { currentChatId, pendingThreadContext, setPendingThreadContext, createThread } = useAppStore();
   const { currentChat, sendMessage } = useChat();
   const { currentThread, currentThreadId } = useThreads();
   const { text: selectedText, rect, messageId, clearSelection } = useTextSelection();
+
+  // Populate input with selected text when thread context is pending
+  useEffect(() => {
+    if (pendingThreadContext) {
+      const truncatedText = pendingThreadContext.selectedText.length > 100
+        ? pendingThreadContext.selectedText.slice(0, 100) + '...'
+        : pendingThreadContext.selectedText;
+      setInput(truncatedText);
+    }
+  }, [pendingThreadContext]);
+
+  const handleCreateThread = (text: string, parentMessageId: string) => {
+    setPendingThreadContext({ selectedText: text, parentMessageId });
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,7 +36,21 @@ export function ChatPanel() {
     const content = input.trim();
     setInput('');
 
-    if (currentThreadId && currentThread) {
+    if (pendingThreadContext) {
+      // Create the thread and send message as a new standalone message
+      const threadId = createThread(
+        currentChatId,
+        pendingThreadContext.parentMessageId,
+        pendingThreadContext.selectedText,
+        content
+      );
+      
+      // Send message with thread reference but without full context
+      await sendMessage(content, { threadId });
+      
+      // Clear the pending context
+      setPendingThreadContext(null);
+    } else if (currentThreadId && currentThread) {
       await sendMessage(content, {
         threadId: currentThreadId,
         context: `Context: Exploring "${currentThread.selectedText}"\nInstruction: ${currentThread.context}`,
@@ -76,6 +104,7 @@ export function ChatPanel() {
           rect={rect}
           messageId={messageId}
           onClose={clearSelection}
+          onCreateThread={handleCreateThread}
         />
       )}
 
@@ -87,7 +116,9 @@ export function ChatPanel() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder={
-              currentThreadId
+              pendingThreadContext
+                ? 'Add your message about the selected text...'
+                : currentThreadId
                 ? 'Explore the thread context...'
                 : 'Type your message...'
             }

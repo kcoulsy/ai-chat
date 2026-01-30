@@ -1,12 +1,32 @@
-import { X, Key, Bot, Palette } from 'lucide-react';
+import { X, Key, Bot, Palette, Sun, Moon, Monitor } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useTheme } from '../theme/ThemeProvider';
 import { useState } from 'react';
-import type { Theme } from '../../types';
+import { themeNames, type ThemeName, type ThemeMode } from '../../types';
+
+// Theme display names for the UI
+const themeDisplayNames: Record<ThemeName, string> = {
+  'amethyst-haze': 'Amethyst Haze',
+  'coffee': 'Coffee',
+};
+
+// Theme preview colors for visual representation
+const themePreviews: Record<ThemeName, { bg: string; primary: string; accent: string }> = {
+  'amethyst-haze': {
+    bg: 'oklch(0.9777 0.0041 301.4256)',
+    primary: 'oklch(0.6104 0.0767 299.7335)',
+    accent: 'oklch(0.7889 0.0802 359.9375)',
+  },
+  'coffee': {
+    bg: 'oklch(0.9821 0 0)',
+    primary: 'oklch(0.4341 0.0392 41.9938)',
+    accent: 'oklch(0.9310 0 0)',
+  },
+};
 
 export function SettingsPanel() {
   const { settings, setSettings, isSettingsOpen, setSettingsOpen } = useAppStore();
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, themeMode, setThemeMode } = useTheme();
   const [apiKey, setApiKey] = useState(settings.openaiApiKey);
   const [model, setModel] = useState(settings.model);
 
@@ -17,8 +37,12 @@ export function SettingsPanel() {
     setSettingsOpen(false);
   };
 
-  const handleThemeChange = (newTheme: Theme) => {
+  const handleThemeChange = (newTheme: ThemeName) => {
     setTheme(newTheme);
+  };
+
+  const handleThemeModeChange = (newMode: ThemeMode) => {
+    setThemeMode(newMode);
   };
 
   return (
@@ -75,43 +99,100 @@ export function SettingsPanel() {
             </select>
           </div>
 
-          {/* Theme */}
+          {/* Theme Selection */}
           <div>
-            <label className="block text-sm font-medium text-foreground mb-1">
+            <label className="block text-sm font-medium text-foreground mb-2">
               <div className="flex items-center gap-2">
                 <Palette size={16} />
                 Theme
               </div>
             </label>
+            <div className="grid grid-cols-2 gap-2">
+              {themeNames.map((themeName) => {
+                const preview = themePreviews[themeName];
+                const isSelected = theme === themeName;
+                return (
+                  <button
+                    key={themeName}
+                    onClick={() => handleThemeChange(themeName)}
+                    className={`relative p-3 rounded-lg border-2 transition-all ${
+                      isSelected
+                        ? 'border-primary bg-primary/5'
+                        : 'border-input hover:border-primary/50'
+                    }`}
+                  >
+                    {/* Theme Preview */}
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-12 h-12 rounded-lg border shadow-sm flex-shrink-0"
+                        style={{
+                          backgroundColor: preview.bg,
+                          borderColor: 'rgba(0,0,0,0.1)',
+                        }}
+                      >
+                        <div className="w-full h-full flex items-center justify-center gap-1">
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: preview.primary }}
+                          />
+                          <div
+                            className="w-3 h-3 rounded-full"
+                            style={{ backgroundColor: preview.accent }}
+                          />
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <div className={`font-medium ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                          {themeDisplayNames[themeName]}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {isSelected ? 'Active' : 'Click to apply'}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Dark Mode Toggle */}
+          <div>
+            <label className="block text-sm font-medium text-foreground mb-2">
+              Appearance
+            </label>
             <div className="grid grid-cols-3 gap-2">
               <button
-                onClick={() => handleThemeChange('light')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  theme === 'light'
+                onClick={() => handleThemeModeChange('light')}
+                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  themeMode === 'light'
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-background text-foreground border-input hover:bg-muted'
                 }`}
               >
+                <Sun size={16} />
                 Light
               </button>
               <button
-                onClick={() => handleThemeChange('dark')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  theme === 'dark'
+                onClick={() => handleThemeModeChange('dark')}
+                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  themeMode === 'dark'
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-background text-foreground border-input hover:bg-muted'
                 }`}
               >
+                <Moon size={16} />
                 Dark
               </button>
               <button
-                onClick={() => handleThemeChange('system')}
-                className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
-                  theme === 'system'
+                onClick={() => handleThemeModeChange('system')}
+                className={`flex items-center justify-center gap-2 px-3 py-2 rounded-lg border transition-colors ${
+                  themeMode === 'system'
                     ? 'bg-primary text-primary-foreground border-primary'
                     : 'bg-background text-foreground border-input hover:bg-muted'
                 }`}
               >
+                <Monitor size={16} />
                 System
               </button>
             </div>

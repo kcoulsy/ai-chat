@@ -12,6 +12,7 @@ interface AppState {
   currentChatId: string | null;
   currentThreadId: string | null;
   isSettingsOpen: boolean;
+  pendingThreadContext: { selectedText: string; parentMessageId: string } | null;
   
   // Settings
   settings: AppSettings;
@@ -19,6 +20,7 @@ interface AppState {
   // Actions
   setCurrentChat: (chatId: string | null) => void;
   setCurrentThread: (threadId: string | null) => void;
+  setPendingThreadContext: (context: { selectedText: string; parentMessageId: string } | null) => void;
   createChat: (title?: string) => string;
   deleteChat: (chatId: string) => void;
   addMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
@@ -44,13 +46,18 @@ export const useAppStore = create<AppState>()(
       settings: {
         openaiApiKey: '',
         model: 'gpt-4o-mini',
-        theme: 'system',
+        theme: 'amethyst-haze',
+        themeMode: 'system',
       },
 
+      pendingThreadContext: null,
+
       // Actions
-      setCurrentChat: (chatId) => set({ currentChatId: chatId, currentThreadId: null }),
+      setCurrentChat: (chatId) => set({ currentChatId: chatId, currentThreadId: null, pendingThreadContext: null }),
       
       setCurrentThread: (threadId) => set({ currentThreadId: threadId }),
+      
+      setPendingThreadContext: (context) => set({ pendingThreadContext: context }),
       
       createChat: (title) => {
         const id = crypto.randomUUID();

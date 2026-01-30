@@ -17,14 +17,14 @@ export function useChat() {
   const currentChat = useMemo(() => chats.find((c) => c.id === currentChatId), [chats, currentChatId]);
 
   const sendMessage = useCallback(
-    async (content: string, threadContext?: { threadId: string; context: string }) => {
+    async (content: string, threadContext?: { threadId: string; context?: string }) => {
       if (!currentChatId) return;
 
       // Add user message
       addMessage(currentChatId, {
         chatId: currentChatId,
         role: 'user',
-        content: threadContext ? `${threadContext.context}\n\n${content}` : content,
+        content: threadContext?.context ? `${threadContext.context}\n\n${content}` : content,
       });
 
       // Generate title on first message
@@ -59,10 +59,13 @@ export function useChat() {
 
       // Stream response
       try {
-        const messages: Pick<Message, 'role' | 'content'>[] = [
-          ...(currentChat?.messages || []).map((m) => ({ role: m.role, content: m.content })),
-          { role: 'user', content: threadContext ? `${threadContext.context}\n\n${content}` : content },
-        ];
+        // For thread messages without full context, only send the current message
+        const messages: Pick<Message, 'role' | 'content'>[] = threadContext?.context
+          ? [
+              ...(currentChat?.messages || []).map((m) => ({ role: m.role, content: m.content })),
+              { role: 'user', content: `${threadContext.context}\n\n${content}` },
+            ]
+          : [{ role: 'user', content }];
 
         let fullContent = '';
         for await (const chunk of streamChatCompletion(messages, settings.model)) {
