@@ -151,3 +151,37 @@ body {
   background: var(--accent);
   color: var(--accent-foreground);
 }
+
+/* Prose styles for chat bubbles - ensure text inherits parent color */
+.prose-invert {
+  --tw-prose-body: var(--primary-foreground);
+  --tw-prose-headings: var(--primary-foreground);
+  --tw-prose-lead: var(--primary-foreground);
+  --tw-prose-links: var(--primary-foreground);
+  --tw-prose-bold: var(--primary-foreground);
+  --tw-prose-counters: var(--primary-foreground);
+  --tw-prose-bullets: var(--primary-foreground);
+  --tw-prose-hr: var(--primary-foreground);
+  --tw-prose-quotes: var(--primary-foreground);
+  --tw-prose-quote-borders: var(--primary-foreground);
+  --tw-prose-captions: var(--primary-foreground);
+  --tw-prose-code: var(--primary-foreground);
+  --tw-prose-pre-code: var(--primary-foreground);
+  --tw-prose-pre-bg: rgba(0, 0, 0, 0.2);
+  --tw-prose-th-borders: var(--primary-foreground);
+  --tw-prose-td-borders: var(--primary-foreground);
+}
+
+.prose-invert p,
+.prose-invert h1,
+.prose-invert h2,
+.prose-invert h3,
+.prose-invert h4,
+.prose-invert h5,
+.prose-invert h6,
+.prose-invert li,
+.prose-invert strong,
+.prose-invert em,
+.prose-invert code {
+  color: var(--primary-foreground) !important;
+}

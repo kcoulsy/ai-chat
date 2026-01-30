@@ -23,6 +23,7 @@ export interface Thread {
   selectedText: string;
   context: string;
   createdAt: number;
+  lineIndex: number;
 }
 
 export type MarkerCategory = 'plot' | 'character' | 'world' | 'note';
@@ -34,6 +35,8 @@ export interface Marker {
   label: string;
   category: MarkerCategory;
   timestamp: number;
+  selectedText: string;
+  lineIndex: number;
 }
 
 export const themeNames = ['amethyst-haze', 'coffee'] as const;
@@ -50,10 +53,10 @@ export interface AppSettings {
 }
 
 export const categoryColors: Record<MarkerCategory, string> = {
-  plot: 'bg-red-500',
-  character: 'bg-green-500',
-  world: 'bg-blue-500',
-  note: 'bg-yellow-500',
+  plot: 'bg-chart-1',
+  character: 'bg-chart-2',
+  world: 'bg-chart-3',
+  note: 'bg-chart-4',
 };
 
 export const categoryLabels: Record<MarkerCategory, string> = {

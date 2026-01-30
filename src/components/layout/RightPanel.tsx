@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { X, MessageSquare } from 'lucide-react';
+import { X, MessageSquare, Bookmark } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useMarkers } from '../../hooks/useMarkers';
 import { MiniMap } from '../navigation/MiniMap';
-import { categoryColors, categoryLabels, type MarkerCategory } from '../../types';
+import { categoryColors, categoryLabels, type MarkerCategory, type Marker } from '../../types';
 
 export function RightPanel() {
-  const { currentChatId, threads, setCurrentThread, currentThreadId } = useAppStore();
+  const { currentChatId, threads, setCurrentThread, currentThreadId, chats } = useAppStore();
   const { markers: chatMarkers, removeMarker } = useMarkers();
   const chatThreads = threads.filter((t) => t.chatId === currentChatId);
   const [selectedCategory, setSelectedCategory] = useState<MarkerCategory | 'all'>('all');
@@ -15,6 +15,47 @@ export function RightPanel() {
     selectedCategory === 'all'
       ? chatMarkers
       : chatMarkers.filter((m) => m.category === selectedCategory);
+
+  // Group markers by message
+  const markersByMessage = filteredMarkers.reduce((acc, marker) => {
+    if (!acc[marker.messageId]) acc[marker.messageId] = [];
+    acc[marker.messageId].push(marker);
+    return acc;
+  }, {} as Record<string, Marker[]>);
+
+  // Get message info for each group
+  const getMessageInfo = (messageId: string) => {
+    const currentChat = chats.find((c) => c.id === currentChatId);
+    const message = currentChat?.messages.find((m) => m.id === messageId);
+    return {
+      content: message?.content.slice(0, 50) || 'Unknown message',
+      messageId,
+    };
+  };
+
+  // Handle marker click - navigate to specific line
+  const handleMarkerClick = (marker: Marker) => {
+    // First, clear any thread view to show the main chat
+    setCurrentThread(null);
+    
+    // Then scroll to the message and line
+    setTimeout(() => {
+      const messageEl = document.querySelector(`[data-message-id="${marker.messageId}"]`);
+      if (messageEl) {
+        messageEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        
+        // Highlight the line temporarily
+        const lines = messageEl.querySelectorAll('.prose > div > div');
+        if (lines[marker.lineIndex]) {
+          const lineEl = lines[marker.lineIndex] as HTMLElement;
+          lineEl.style.backgroundColor = 'rgba(255, 255, 0, 0.2)';
+          setTimeout(() => {
+            lineEl.style.backgroundColor = '';
+          }, 2000);
+        }
+      }
+    }, 100);
+  };
 
   if (!currentChatId) {
     return (
@@ -63,26 +104,50 @@ export function RightPanel() {
             ))}
           </div>
 
-          {/* Marker List */}
-          <div className="space-y-1">
+          {/* Marker List - Grouped by Message */}
+          <div className="space-y-3">
             {filteredMarkers.length === 0 ? (
               <p className="text-xs text-sidebar-foreground/40 italic">No markers yet</p>
             ) : (
-              filteredMarkers.map((marker) => (
-                <div
-                  key={marker.id}
-                  className="group flex items-center gap-2 p-2 rounded hover:bg-sidebar-accent/50 transition-colors"
-                >
-                  <div className={`w-2 h-2 rounded-full ${categoryColors[marker.category]}`} />
-                  <span className="flex-1 text-xs text-sidebar-foreground truncate">{marker.label}</span>
-                  <button
-                    onClick={() => removeMarker(marker.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-sidebar-foreground/50 hover:text-destructive transition-opacity"
-                  >
-                    <X size={12} />
-                  </button>
-                </div>
-              ))
+              Object.entries(markersByMessage).map(([messageId, markers]) => {
+                const messageInfo = getMessageInfo(messageId);
+                return (
+                  <div key={messageId} className="border-l-2 border-sidebar-border pl-2">
+                    <div className="text-[10px] text-sidebar-foreground/50 mb-1 truncate">
+                      {messageInfo.content}...
+                    </div>
+                    <div className="space-y-1">
+                      {markers.map((marker) => (
+                        <button
+                          key={marker.id}
+                          onClick={() => handleMarkerClick(marker)}
+                          className="w-full group flex items-center gap-2 p-1.5 rounded hover:bg-sidebar-accent/50 transition-colors text-left"
+                        >
+                          <div className={`w-2 h-2 rounded-full flex-shrink-0 ${categoryColors[marker.category]}`} />
+                          <Bookmark size={10} className="text-sidebar-foreground/40 flex-shrink-0" />
+                          <div className="flex-1 min-w-0">
+                            <span className="text-xs text-sidebar-foreground truncate block">
+                              {marker.label}
+                            </span>
+                            <span className="text-[10px] text-sidebar-foreground/50 truncate block">
+                              Line {(marker.lineIndex || 0) + 1}{marker.selectedText ? `: "${marker.selectedText.slice(0, 25)}${marker.selectedText.length > 25 ? '...' : ''}"` : ''}
+                            </span>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeMarker(marker.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-sidebar-foreground/50 hover:text-destructive transition-opacity flex-shrink-0"
+                          >
+                            <X size={12} />
+                          </button>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

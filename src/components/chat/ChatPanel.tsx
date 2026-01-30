@@ -13,7 +13,7 @@ export function ChatPanel() {
   const { currentChatId, pendingThreadContext, setPendingThreadContext, createThread } = useAppStore();
   const { currentChat, sendMessage } = useChat();
   const { currentThread, currentThreadId } = useThreads();
-  const { text: selectedText, rect, messageId, clearSelection } = useTextSelection();
+  const { text: selectedText, rect, messageId, lineIndex, clearSelection } = useTextSelection();
 
   // Populate input with selected text when thread context is pending
   useEffect(() => {
@@ -25,8 +25,8 @@ export function ChatPanel() {
     }
   }, [pendingThreadContext]);
 
-  const handleCreateThread = (text: string, parentMessageId: string) => {
-    setPendingThreadContext({ selectedText: text, parentMessageId });
+  const handleCreateThread = (text: string, parentMessageId: string, lineIndex: number) => {
+    setPendingThreadContext({ selectedText: text, parentMessageId, lineIndex });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,7 +42,8 @@ export function ChatPanel() {
         currentChatId,
         pendingThreadContext.parentMessageId,
         pendingThreadContext.selectedText,
-        content
+        content,
+        pendingThreadContext.lineIndex
       );
       
       // Send message with thread reference but without full context
@@ -103,6 +104,7 @@ export function ChatPanel() {
           selectedText={selectedText}
           rect={rect}
           messageId={messageId}
+          lineIndex={lineIndex}
           onClose={clearSelection}
           onCreateThread={handleCreateThread}
         />

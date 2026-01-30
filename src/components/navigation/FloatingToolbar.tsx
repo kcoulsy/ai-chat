@@ -8,11 +8,12 @@ interface FloatingToolbarProps {
   selectedText: string;
   rect: DOMRect;
   messageId: string;
+  lineIndex: number;
   onClose: () => void;
-  onCreateThread: (text: string, parentMessageId: string) => void;
+  onCreateThread: (text: string, parentMessageId: string, lineIndex: number) => void;
 }
 
-export function FloatingToolbar({ selectedText, rect, messageId, onClose, onCreateThread }: FloatingToolbarProps) {
+export function FloatingToolbar({ selectedText, rect, messageId, lineIndex, onClose, onCreateThread }: FloatingToolbarProps) {
   const [showMarkerDialog, setShowMarkerDialog] = useState(false);
   const [markerLabel, setMarkerLabel] = useState('');
   const [markerCategory, setMarkerCategory] = useState<MarkerCategory>('note');
@@ -24,14 +25,14 @@ export function FloatingToolbar({ selectedText, rect, messageId, onClose, onCrea
   const handleCreateThread = () => {
     if (!currentChatId) return;
     
-    onCreateThread(selectedText, messageId);
+    onCreateThread(selectedText, messageId, lineIndex);
     onClose();
     window.getSelection()?.removeAllRanges();
   };
 
   const handleAddMarker = () => {
     if (markerLabel.trim()) {
-      addMarker(messageId, markerLabel.trim(), markerCategory);
+      addMarker(messageId, markerLabel.trim(), markerCategory, selectedText, lineIndex);
       setShowMarkerDialog(false);
       setMarkerLabel('');
       onClose();
@@ -93,7 +94,7 @@ export function FloatingToolbar({ selectedText, rect, messageId, onClose, onCrea
                 onClick={() => setMarkerCategory(cat)}
                 className={`flex-1 text-[10px] py-1 px-1 rounded transition-colors ${
                   markerCategory === cat
-                    ? `${categoryColors[cat]} text-white`
+                    ? `${categoryColors[cat]} text-primary-foreground`
                     : 'bg-muted text-muted-foreground hover:bg-muted/80'
                 }`}
               >

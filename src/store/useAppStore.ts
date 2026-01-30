@@ -12,7 +12,7 @@ interface AppState {
   currentChatId: string | null;
   currentThreadId: string | null;
   isSettingsOpen: boolean;
-  pendingThreadContext: { selectedText: string; parentMessageId: string } | null;
+  pendingThreadContext: { selectedText: string; parentMessageId: string; lineIndex: number } | null;
   
   // Settings
   settings: AppSettings;
@@ -20,13 +20,13 @@ interface AppState {
   // Actions
   setCurrentChat: (chatId: string | null) => void;
   setCurrentThread: (threadId: string | null) => void;
-  setPendingThreadContext: (context: { selectedText: string; parentMessageId: string } | null) => void;
+  setPendingThreadContext: (context: { selectedText: string; parentMessageId: string; lineIndex: number } | null) => void;
   createChat: (title?: string) => string;
   deleteChat: (chatId: string) => void;
   addMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (chatId: string, messageId: string, updates: Partial<Message>) => void;
-  createThread: (chatId: string, parentMessageId: string, selectedText: string, context: string) => string;
-  createMarker: (chatId: string, messageId: string, label: string, category: Marker['category']) => void;
+      createThread: (chatId: string, parentMessageId: string, selectedText: string, context: string, lineIndex: number) => string;
+  createMarker: (chatId: string, messageId: string, label: string, category: Marker['category'], selectedText: string, lineIndex: number) => void;
   deleteMarker: (markerId: string) => void;
   setSettings: (settings: Partial<AppSettings>) => void;
   setSettingsOpen: (open: boolean) => void;
@@ -115,7 +115,7 @@ export const useAppStore = create<AppState>()(
         }));
       },
       
-      createThread: (chatId, parentMessageId, selectedText, context) => {
+      createThread: (chatId, parentMessageId, selectedText, context, lineIndex) => {
         const id = crypto.randomUUID();
         const newThread: Thread = {
           id,
@@ -123,6 +123,7 @@ export const useAppStore = create<AppState>()(
           parentMessageId,
           selectedText,
           context,
+          lineIndex,
           createdAt: Date.now(),
         };
         set((state) => ({
@@ -131,7 +132,7 @@ export const useAppStore = create<AppState>()(
         return id;
       },
       
-      createMarker: (chatId, messageId, label, category) => {
+      createMarker: (chatId, messageId, label, category, selectedText, lineIndex) => {
         const newMarker: Marker = {
           id: crypto.randomUUID(),
           chatId,
@@ -139,6 +140,8 @@ export const useAppStore = create<AppState>()(
           label,
           category,
           timestamp: Date.now(),
+          selectedText,
+          lineIndex,
         };
         set((state) => ({
           markers: [...state.markers, newMarker],

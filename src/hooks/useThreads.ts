@@ -7,9 +7,9 @@ export function useThreads() {
   const chatThreads = threads.filter((t) => t.chatId === currentChatId);
 
   const startThread = useCallback(
-    (parentMessageId: string, selectedText: string, context: string) => {
+    (parentMessageId: string, selectedText: string, context: string, lineIndex: number) => {
       if (!currentChatId) return null;
-      const threadId = createThread(currentChatId, parentMessageId, selectedText, context);
+      const threadId = createThread(currentChatId, parentMessageId, selectedText, context, lineIndex);
       return threadId;
     },
     [currentChatId, createThread]

@@ -8,9 +8,9 @@ export function useMarkers() {
   const chatMarkers = markers.filter((m) => m.chatId === currentChatId);
 
   const addMarker = useCallback(
-    (messageId: string, label: string, category: MarkerCategory) => {
+    (messageId: string, label: string, category: MarkerCategory, selectedText: string, lineIndex: number) => {
       if (!currentChatId) return;
-      createMarker(currentChatId, messageId, label, category);
+      createMarker(currentChatId, messageId, label, category, selectedText, lineIndex);
     },
     [currentChatId, createMarker]
   );
