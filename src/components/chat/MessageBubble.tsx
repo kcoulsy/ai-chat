@@ -1,4 +1,5 @@
-import { Bot, User, MessageSquare } from 'lucide-react';
+import { useState } from 'react';
+import { Bot, User, MessageSquare, Copy, ArrowUp, Check } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import type { Message, Thread, Marker, ContentSegment } from '../../types';
@@ -9,6 +10,140 @@ import { useMarkers } from '../../hooks/useMarkers';
 
 interface MessageBubbleProps {
   message: Message;
+}
+
+interface CopyButtonProps {
+  content: string;
+}
+
+interface JumpButtonProps {
+  messageId: string;
+}
+
+interface CodeCopyButtonProps {
+  codeContent: string;
+}
+
+/**
+ * Button to copy message content to clipboard
+ */
+function CopyButton({ content }: CopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="
+        p-1.5 rounded-md
+        bg-muted hover:bg-muted/80
+        text-muted-foreground hover:text-foreground
+        transition-colors
+        shadow-sm
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
+      "
+      title={copied ? 'Copied!' : 'Copy message'}
+      aria-label={copied ? 'Copied to clipboard' : 'Copy message content'}
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+    </button>
+  );
+}
+
+/**
+ * Button to jump to the previous message
+ */
+function JumpButton({ messageId }: JumpButtonProps) {
+  const currentChat = useAppStore((state) =>
+    state.chats.find((c) => c.id === state.currentChatId)
+  );
+
+  // Hide if this is the first message
+  const messageIndex = currentChat?.messages.findIndex(
+    (m) => m.id === messageId
+  );
+
+  if (messageIndex === 0) return null;
+
+  const handleJump = () => {
+    if (!currentChat) return;
+
+    const messageIndex = currentChat.messages.findIndex(
+      (m) => m.id === messageId
+    );
+
+    if (messageIndex > 0) {
+      const previousMessage = currentChat.messages[messageIndex - 1];
+      const element = document.querySelector(
+        `[data-message-id="${previousMessage.id}"]`
+      );
+      element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
+  return (
+    <button
+      onClick={handleJump}
+      className="
+        p-1.5 rounded-md
+        bg-muted hover:bg-muted/80
+        text-muted-foreground hover:text-foreground
+        transition-colors
+        shadow-sm
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
+      "
+      title="Jump to previous message"
+      aria-label="Jump to previous message"
+    >
+      <ArrowUp size={14} />
+    </button>
+  );
+}
+
+/**
+ * Button to copy code block content to clipboard
+ */
+function CodeCopyButton({ codeContent }: CodeCopyButtonProps) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(codeContent);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy code:', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="
+        absolute top-2 right-2
+        p-1.5 rounded-md
+        bg-muted/80 hover:bg-muted
+        text-muted-foreground hover:text-foreground
+        transition-colors
+        shadow-sm
+        opacity-0 group-hover:opacity-100
+        focus:outline-none focus-visible:ring-2 focus-visible:ring-primary
+      "
+      title={copied ? 'Copied!' : 'Copy code'}
+      aria-label={copied ? 'Code copied to clipboard' : 'Copy code to clipboard'}
+    >
+      {copied ? <Check size={14} /> : <Copy size={14} />}
+    </button>
+  );
 }
 
 /**
@@ -96,6 +231,10 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const threads = allThreads.filter((t: Thread) => t.parentMessageId === message.id);
   const { getMarkersForMessage, removeMarker } = useMarkers();
   const messageMarkers = getMarkersForMessage(message.id);
+  const [showActions, setShowActions] = useState(false);
+
+  // Detect touch device for mobile fallback
+  const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
 
   // Find the thread this message belongs to (if it's a thread response)
   const parentThread = message.threadId
@@ -140,6 +279,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       data-message-id={message.id}
       data-role={message.role}
       className={`flex gap-3 ${isUser ? 'flex-row-reverse' : ''}`}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
     >
       <div
         className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
@@ -149,7 +290,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
         {isUser ? <User size={16} className="text-primary-foreground" /> : <Bot size={16} className="text-muted-foreground" />}
       </div>
 
-      <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : ''}`}>
+      <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : ''} relative`}>
         <div
           className={`inline-block px-4 py-2 rounded-lg text-left ${
             isUser
@@ -181,7 +322,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   <div
                     key={idx}
                     data-line-index={segment.lineIndex}
-                    className="code-block-wrapper relative"
+                    className="code-block-wrapper relative group"
                   >
                     {/* Marker pins and Thread pills on the left side */}
                     {!isUser && (segmentMarkers.length > 0 || segmentThreads.length > 0) && (
@@ -201,7 +342,9 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                         ))}
                       </div>
                     )}
-                    <pre className="bg-muted-foreground/10 p-3 rounded overflow-x-auto m-0 text-left">
+                    {/* Copy button for code block */}
+                    <CodeCopyButton codeContent={extractCodeContent(segment.content)} />
+                    <pre className="bg-muted-foreground/10 p-3 rounded overflow-x-auto m-0 text-left pr-10">
                       <code className="text-sm font-mono whitespace-pre">
                         {extractCodeContent(segment.content)}
                       </code>
@@ -248,6 +391,21 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               <MessageSquare size={12} />
               View thread: "{parentThread.selectedText.slice(0, 30)}{parentThread.selectedText.length > 30 ? '...' : ''}"
             </button>
+          </div>
+        )}
+
+        {/* Action buttons for AI messages */}
+        {!isUser && (
+          <div
+            className={`
+              absolute right-0 bottom-0 translate-x-full
+              flex flex-col gap-1 pl-2 pb-1
+              transition-opacity duration-200
+              ${isTouchDevice || showActions ? 'opacity-100' : 'opacity-0'}
+            `}
+          >
+            <CopyButton content={message.content} />
+            <JumpButton messageId={message.id} />
           </div>
         )}
       </div>
