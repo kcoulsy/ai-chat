@@ -13,7 +13,7 @@ export function ThreadBubble({ thread }: ThreadBubbleProps) {
 
   return (
     <div
-      className="inline-flex items-center gap-2 px-3 py-1.5 bg-accent text-accent-foreground rounded-full text-xs cursor-pointer hover:opacity-90 transition-colors"
+      className="flex items-center gap-2 px-3 py-1.5 bg-accent text-accent-foreground rounded-full text-xs cursor-pointer hover:opacity-90 transition-colors w-fit my-1"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => setCurrentThread(thread.id)}

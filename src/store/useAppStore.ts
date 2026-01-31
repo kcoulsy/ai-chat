@@ -20,6 +20,7 @@ interface AppState {
   // Actions
   setCurrentChat: (chatId: string | null) => void;
   setCurrentThread: (threadId: string | null) => void;
+  closeThreadPanel: () => void;
   setPendingThreadContext: (context: { selectedText: string; parentMessageId: string; lineIndex: number } | null) => void;
   createChat: (title?: string) => string;
   deleteChat: (chatId: string) => void;
@@ -56,6 +57,8 @@ export const useAppStore = create<AppState>()(
       setCurrentChat: (chatId) => set({ currentChatId: chatId, currentThreadId: null, pendingThreadContext: null }),
       
       setCurrentThread: (threadId) => set({ currentThreadId: threadId }),
+      
+      closeThreadPanel: () => set({ currentThreadId: null }),
       
       setPendingThreadContext: (context) => set({ pendingThreadContext: context }),
       

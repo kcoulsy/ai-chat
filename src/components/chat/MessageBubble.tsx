@@ -214,14 +214,54 @@ function extractCodeContent(codeBlock: string): string {
 }
 
 /**
- * Find which line within a text segment contains the target line index
- * Returns the relative line position (0-indexed within the segment)
+ * Split text content at thread boundaries to insert bubbles between segments
  */
-function findLineInSegment(segment: ContentSegment, targetLineIndex: number): number {
-  if (targetLineIndex < segment.lineIndex) return -1;
-  const relativeIndex = targetLineIndex - segment.lineIndex;
-  if (relativeIndex >= (segment.lineCount || 1)) return -1;
-  return relativeIndex;
+function splitContentAtThreads(
+  content: string,
+  startLineIndex: number,
+  threadsByLine: Record<number, Thread[]>,
+  markersByLine: Record<number, Marker[]>
+): Array<{ type: 'content' | 'threads' | 'markers'; content?: string; threads?: Thread[]; markers?: Marker[]; lineIndex?: number }> {
+  const result: Array<{ type: 'content' | 'threads' | 'markers'; content?: string; threads?: Thread[]; markers?: Marker[]; lineIndex?: number }> = [];
+
+  const lines = content.split('\n');
+  let currentChunk: string[] = [];
+  let currentLineIdx = startLineIndex;
+
+  lines.forEach((line, idx) => {
+    const lineIndex = startLineIndex + idx;
+    const lineThreads = threadsByLine[lineIndex] || [];
+    const lineMarkers = markersByLine[lineIndex] || [];
+
+    // If there are threads or markers at this line, flush current chunk first
+    if (lineThreads.length > 0 || lineMarkers.length > 0) {
+      if (currentChunk.length > 0) {
+        result.push({ type: 'content', content: currentChunk.join('\n'), lineIndex: currentLineIdx });
+        currentChunk = [];
+      }
+
+      // Add markers if any
+      if (lineMarkers.length > 0) {
+        result.push({ type: 'markers', markers: lineMarkers, lineIndex });
+      }
+
+      // Add threads if any
+      if (lineThreads.length > 0) {
+        result.push({ type: 'threads', threads: lineThreads, lineIndex });
+      }
+
+      currentLineIdx = lineIndex + 1;
+    }
+
+    currentChunk.push(line);
+  });
+
+  // Don't forget remaining content
+  if (currentChunk.length > 0) {
+    result.push({ type: 'content', content: currentChunk.join('\n'), lineIndex: currentLineIdx });
+  }
+
+  return result;
 }
 
 export function MessageBubble({ message }: MessageBubbleProps) {
@@ -322,12 +362,19 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                   <div
                     key={idx}
                     data-line-index={segment.lineIndex}
-                    className="code-block-wrapper relative group"
+                    className="code-block-wrapper relative group my-2"
                   >
-                    {/* Marker pins and Thread pills on the left side */}
-                    {!isUser && (segmentMarkers.length > 0 || segmentThreads.length > 0) && (
-                      <div className="absolute -left-6 top-0 flex flex-col gap-0.5">
-                        {/* Markers */}
+                    {/* Thread pills before code block */}
+                    {!isUser && segmentThreads.length > 0 && (
+                      <div className="mb-2 space-y-1">
+                        {segmentThreads.map((thread) => (
+                          <ThreadBubble key={thread.id} thread={thread} />
+                        ))}
+                      </div>
+                    )}
+                    {/* Markers for code block */}
+                    {!isUser && segmentMarkers.length > 0 && (
+                      <div className="mb-1 flex flex-wrap gap-1">
                         {segmentMarkers.map((marker) => (
                           <MarkerPin
                             key={marker.id}
@@ -335,10 +382,6 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                             onClick={() => handleMarkerClick(marker)}
                             onRemove={() => removeMarker(marker.id)}
                           />
-                        ))}
-                        {/* Thread pills */}
-                        {segmentThreads.map((thread) => (
-                          <ThreadBubble key={thread.id} thread={thread} />
                         ))}
                       </div>
                     )}
@@ -351,29 +394,52 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     </pre>
                   </div>
                 ) : (
-                  <div key={idx} data-line-index={segment.lineIndex} className="relative text-left">
-                    {/* Marker pins and Thread pills on the left side */}
-                    {!isUser && (segmentMarkers.length > 0 || segmentThreads.length > 0) && (
-                      <div className="absolute -left-6 top-0 flex flex-col gap-0.5">
-                        {/* Markers */}
-                        {segmentMarkers.map((marker) => (
-                          <MarkerPin
-                            key={marker.id}
-                            marker={marker}
-                            onClick={() => handleMarkerClick(marker)}
-                            onRemove={() => removeMarker(marker.id)}
-                          />
-                        ))}
-                        {/* Thread pills */}
-                        {segmentThreads.map((thread) => (
-                          <ThreadBubble key={thread.id} thread={thread} />
-                        ))}
+                  <div key={idx} className="relative text-left">
+                    {/* Render text with inline thread bubbles and markers */}
+                    {!isUser && (segmentThreads.length > 0 || segmentMarkers.length > 0) ? (
+                      <div data-line-index={segment.lineIndex}>
+                        {splitContentAtThreads(segment.content, segment.lineIndex, threadsByLine, markersByLine).map((part, partIdx) => {
+                          if (part.type === 'threads' && part.threads) {
+                            return (
+                              <div key={partIdx} className="my-1 space-y-1">
+                                {part.threads.map((thread) => (
+                                  <ThreadBubble key={thread.id} thread={thread} />
+                                ))}
+                              </div>
+                            );
+                          }
+                          if (part.type === 'markers' && part.markers) {
+                            return (
+                              <div key={partIdx} className="my-1 flex flex-wrap gap-1">
+                                {part.markers.map((marker) => (
+                                  <MarkerPin
+                                    key={marker.id}
+                                    marker={marker}
+                                    onClick={() => handleMarkerClick(marker)}
+                                    onRemove={() => removeMarker(marker.id)}
+                                  />
+                                ))}
+                              </div>
+                            );
+                          }
+                          // Content segment - render with markdown
+                          return part.content ? (
+                            <div key={partIdx} data-line-index={part.lineIndex}>
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {part.content}
+                              </ReactMarkdown>
+                            </div>
+                          ) : null;
+                        })}
+                      </div>
+                    ) : (
+                      /* Text content rendered as markdown */
+                      <div data-line-index={segment.lineIndex}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {segment.content}
+                        </ReactMarkdown>
                       </div>
                     )}
-                    {/* Text content rendered as markdown */}
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                      {segment.content}
-                    </ReactMarkdown>
                   </div>
                 );
               })}
