@@ -65,3 +65,11 @@ export const categoryLabels: Record<MarkerCategory, string> = {
   world: 'World',
   note: 'Note',
 };
+
+// Content segment type for parsing messages with code blocks
+export interface ContentSegment {
+  type: 'text' | 'code';
+  content: string;
+  lineIndex: number;  // Starting line index for marker positioning
+  lineCount: number;  // Number of lines this segment spans
+}
