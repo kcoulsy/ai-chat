@@ -14,6 +14,7 @@ export interface Chat {
   createdAt: number;
   updatedAt: number;
   messages: Message[];
+  sourceThreadId?: string; // Links to original thread if this chat was converted from a thread
 }
 
 export interface Thread {
@@ -26,14 +27,12 @@ export interface Thread {
   lineIndex: number;
 }
 
-export type MarkerCategory = 'plot' | 'character' | 'world' | 'note';
-
 export interface Marker {
   id: string;
   chatId: string;
   messageId: string;
   label: string;
-  category: MarkerCategory;
+  color: string;
   timestamp: number;
   selectedText: string;
   lineIndex: number;
@@ -52,19 +51,19 @@ export interface AppSettings {
   themeMode: ThemeMode;
 }
 
-export const categoryColors: Record<MarkerCategory, string> = {
-  plot: 'bg-chart-1',
-  character: 'bg-chart-2',
-  world: 'bg-chart-3',
-  note: 'bg-chart-4',
-};
+// Predefined marker colors
+export const markerColors = [
+  { name: 'Red', value: '#ef4444', class: 'bg-red-500' },
+  { name: 'Orange', value: '#f97316', class: 'bg-orange-500' },
+  { name: 'Amber', value: '#f59e0b', class: 'bg-amber-500' },
+  { name: 'Green', value: '#22c55e', class: 'bg-green-500' },
+  { name: 'Blue', value: '#3b82f6', class: 'bg-blue-500' },
+  { name: 'Purple', value: '#a855f7', class: 'bg-purple-500' },
+  { name: 'Pink', value: '#ec4899', class: 'bg-pink-500' },
+  { name: 'Teal', value: '#14b8a6', class: 'bg-teal-500' },
+] as const;
 
-export const categoryLabels: Record<MarkerCategory, string> = {
-  plot: 'Plot',
-  character: 'Character',
-  world: 'World',
-  note: 'Note',
-};
+export const defaultMarkerColor = markerColors[4].value; // Blue
 
 // Content segment type for parsing messages with code blocks
 export interface ContentSegment {

@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useAppStore } from '../../store/useAppStore';
-import { categoryColors, type MarkerCategory, type Chat } from '../../types';
+import { markerColors, type Chat } from '../../types';
 
 interface MinimapData {
   position: number;
   type: 'message' | 'marker' | 'thread';
-  category?: MarkerCategory;
+  color?: string;
   label?: string;
   preview?: string;
 }
@@ -40,7 +40,7 @@ export function MiniMap() {
           data.push({
             position: (messageIndex / Math.max(totalMessages - 1, 1)) * 100,
             type: 'marker',
-            category: marker.category,
+            color: marker.color,
             label: marker.label,
           });
         }
@@ -130,13 +130,16 @@ export function MiniMap() {
         {/* Markers */}
         {minimapData
           .filter((d) => d.type === 'marker')
-          .map((item, i) => (
-            <div
-              key={`marker-${i}`}
-              className={`absolute left-2 right-2 h-2 ${categoryColors[item.category!]} rounded-full`}
-              style={{ top: `${item.position}%` }}
-            />
-          ))}
+          .map((item, i) => {
+            const colorClass = markerColors.find(c => c.value === item.color)?.class || 'bg-gray-500';
+            return (
+              <div
+                key={`marker-${i}`}
+                className={`absolute left-2 right-2 h-2 ${colorClass} rounded-full`}
+                style={{ top: `${item.position}%` }}
+              />
+            );
+          })}
 
         {/* Threads */}
         {minimapData
@@ -164,7 +167,10 @@ export function MiniMap() {
           {hoveredItem.type === 'marker' && (
             <>
               <div className="flex items-center gap-2 mb-1">
-                <div className={`w-2 h-2 rounded-full ${categoryColors[hoveredItem.category!]}`} />
+                <div
+                  className="w-2 h-2 rounded-full"
+                  style={{ backgroundColor: hoveredItem.color }}
+                />
                 <span className="text-xs font-medium text-foreground">{hoveredItem.label}</span>
               </div>
               <span className="text-[10px] text-muted-foreground">Click to jump</span>

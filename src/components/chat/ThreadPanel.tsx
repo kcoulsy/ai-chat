@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, MessageSquare, Send } from 'lucide-react';
+import { X, MessageSquare, Send, ArrowUpRight } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useChat } from '../../hooks/useChat';
 import { useThreads } from '../../hooks/useThreads';
@@ -14,6 +14,7 @@ interface ThreadPanelProps {
 export function ThreadPanel({ thread, onClose }: ThreadPanelProps) {
   const [input, setInput] = useState('');
   const { currentChat, sendMessage } = useChat();
+  const { convertThreadToChat } = useAppStore();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get messages for this thread
@@ -68,13 +69,24 @@ export function ThreadPanel({ thread, onClose }: ThreadPanelProps) {
             <span className="text-xs text-muted-foreground">Thread</span>
           </div>
         </div>
-        <button
-          onClick={onClose}
-          className="p-2 hover:bg-accent rounded-lg transition-colors"
-          aria-label="Close thread panel"
-        >
-          <X size={18} className="text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => convertThreadToChat(thread.id)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
+            title="Convert this thread to its own chat"
+            aria-label="Convert thread to chat"
+          >
+            <ArrowUpRight size={14} />
+            Convert to Chat
+          </button>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-accent rounded-lg transition-colors"
+            aria-label="Close thread panel"
+          >
+            <X size={18} className="text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Thread Context Section */}

@@ -1,18 +1,24 @@
 import { useCallback } from 'react';
 import { useAppStore } from '../store/useAppStore';
-import type { MarkerCategory } from '../types';
 
 export function useMarkers() {
-  const { markers, currentChatId, createMarker, deleteMarker } = useAppStore();
+  const { markers, currentChatId, createMarker, updateMarker, deleteMarker } = useAppStore();
 
   const chatMarkers = markers.filter((m) => m.chatId === currentChatId);
 
   const addMarker = useCallback(
-    (messageId: string, label: string, category: MarkerCategory, selectedText: string, lineIndex: number) => {
+    (messageId: string, label: string, color: string, selectedText: string, lineIndex: number) => {
       if (!currentChatId) return;
-      createMarker(currentChatId, messageId, label, category, selectedText, lineIndex);
+      createMarker(currentChatId, messageId, label, color, selectedText, lineIndex);
     },
     [currentChatId, createMarker]
+  );
+
+  const editMarker = useCallback(
+    (markerId: string, updates: { label?: string; color?: string }) => {
+      updateMarker(markerId, updates);
+    },
+    [updateMarker]
   );
 
   const removeMarker = useCallback(
@@ -32,6 +38,7 @@ export function useMarkers() {
   return {
     markers: chatMarkers,
     addMarker,
+    editMarker,
     removeMarker,
     getMarkersForMessage,
   };

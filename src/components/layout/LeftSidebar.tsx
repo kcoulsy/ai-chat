@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MessageSquare, Plus, Settings, Search, Trash2 } from 'lucide-react';
+import { MessageSquare, Plus, Settings, Search, Trash2, GitBranch } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 
 export function LeftSidebar() {
@@ -69,7 +69,13 @@ export function LeftSidebar() {
                     : 'hover:bg-sidebar-accent/50 text-sidebar-foreground'
                 }`}
               >
-                <MessageSquare size={18} className="flex-shrink-0" />
+                {chat.sourceThreadId ? (
+                  <span className="flex-shrink-0 text-primary" title="Converted from thread">
+                    <GitBranch size={18} />
+                  </span>
+                ) : (
+                  <MessageSquare size={18} className="flex-shrink-0" />
+                )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium truncate">{chat.title}</p>
                   <p className="text-xs text-sidebar-foreground/60 truncate">

@@ -27,11 +27,13 @@ interface AppState {
   addMessage: (chatId: string, message: Omit<Message, 'id' | 'timestamp'>) => void;
   updateMessage: (chatId: string, messageId: string, updates: Partial<Message>) => void;
       createThread: (chatId: string, parentMessageId: string, selectedText: string, context: string, lineIndex: number) => string;
-  createMarker: (chatId: string, messageId: string, label: string, category: Marker['category'], selectedText: string, lineIndex: number) => void;
+      createMarker: (chatId: string, messageId: string, label: string, color: string, selectedText: string, lineIndex: number) => void;
+  updateMarker: (markerId: string, updates: Partial<Pick<Marker, 'label' | 'color'>>) => void;
   deleteMarker: (markerId: string) => void;
   setSettings: (settings: Partial<AppSettings>) => void;
   setSettingsOpen: (open: boolean) => void;
   updateChatTitle: (chatId: string, title: string) => void;
+  convertThreadToChat: (threadId: string) => string;
 }
 
 export const useAppStore = create<AppState>()(
@@ -46,7 +48,7 @@ export const useAppStore = create<AppState>()(
       isSettingsOpen: false,
       settings: {
         openaiApiKey: '',
-        model: 'gpt-4o-mini',
+        model: 'gpt-5-mini',
         theme: 'amethyst-haze',
         themeMode: 'system',
       },
@@ -135,13 +137,13 @@ export const useAppStore = create<AppState>()(
         return id;
       },
       
-      createMarker: (chatId, messageId, label, category, selectedText, lineIndex) => {
+      createMarker: (chatId, messageId, label, color, selectedText, lineIndex) => {
         const newMarker: Marker = {
           id: crypto.randomUUID(),
           chatId,
           messageId,
           label,
-          category,
+          color,
           timestamp: Date.now(),
           selectedText,
           lineIndex,
@@ -150,7 +152,15 @@ export const useAppStore = create<AppState>()(
           markers: [...state.markers, newMarker],
         }));
       },
-      
+
+      updateMarker: (markerId, updates) => {
+        set((state) => ({
+          markers: state.markers.map((m) =>
+            m.id === markerId ? { ...m, ...updates } : m
+          ),
+        }));
+      },
+
       deleteMarker: (markerId) => {
         set((state) => ({
           markers: state.markers.filter((m) => m.id !== markerId),
@@ -171,6 +181,42 @@ export const useAppStore = create<AppState>()(
             chat.id === chatId ? { ...chat, title, updatedAt: Date.now() } : chat
           ),
         }));
+      },
+
+      convertThreadToChat: (threadId) => {
+        const state = useAppStore.getState();
+        const thread = state.threads.find((t) => t.id === threadId);
+        if (!thread) return '';
+
+        const sourceChat = state.chats.find((c) => c.id === thread.chatId);
+        if (!sourceChat) return '';
+
+        // Get all messages from the thread
+        const threadMessages = sourceChat.messages.filter((m) => m.threadId === threadId);
+
+        // Create new chat with thread info
+        const newChatId = crypto.randomUUID();
+        const newChat: Chat = {
+          id: newChatId,
+          title: thread.selectedText.length > 40
+            ? thread.selectedText.slice(0, 40) + '...'
+            : thread.selectedText,
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          sourceThreadId: threadId,
+          messages: threadMessages.map((m) => ({
+            ...m,
+            threadId: undefined, // Remove thread association to make them main chat messages
+          })),
+        };
+
+        set((state) => ({
+          chats: [newChat, ...state.chats],
+          currentChatId: newChatId,
+          currentThreadId: null, // Close the thread panel
+        }));
+
+        return newChatId;
       },
     }),
     {

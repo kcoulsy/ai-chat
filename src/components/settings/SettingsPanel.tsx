@@ -92,7 +92,18 @@ export function SettingsPanel() {
               onChange={(e) => setModel(e.target.value)}
               className="w-full px-3 py-2 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-background text-foreground"
             >
-              <option value="gpt-4o-mini">GPT-4o Mini (Recommended)</option>
+              <option value="gpt-5.2">GPT-5.2</option>
+              <option value="gpt-5.2-pro">GPT-5.2 Pro</option>
+              <option value="gpt-5.1">GPT-5.1</option>
+              <option value="gpt-5.1-codex">GPT-5.1 Codex</option>
+              <option value="gpt-5.1-mini">GPT-5.1 Mini</option>
+              <option value="gpt-5">GPT-5</option>
+              <option value="gpt-5-mini">GPT-5 Mini</option>
+              <option value="gpt-5-nano">GPT-5 Nano</option>
+              <option value="gpt-4.1">GPT-4.1</option>
+              <option value="gpt-4.1-mini">GPT-4.1 Mini</option>
+              <option value="gpt-4.1-nano">GPT-4.1 Nano</option>
+              <option value="gpt-4o-mini">GPT-4o Mini</option>
               <option value="gpt-4o">GPT-4o</option>
               <option value="gpt-4">GPT-4</option>
               <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>

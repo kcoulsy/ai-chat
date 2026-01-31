@@ -269,7 +269,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const allThreads = useAppStore((state) => state.threads);
   const setCurrentThread = useAppStore((state) => state.setCurrentThread);
   const threads = allThreads.filter((t: Thread) => t.parentMessageId === message.id);
-  const { getMarkersForMessage, removeMarker } = useMarkers();
+  const { getMarkersForMessage, removeMarker, editMarker } = useMarkers();
   const messageMarkers = getMarkersForMessage(message.id);
   const [showActions, setShowActions] = useState(false);
 
@@ -376,12 +376,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                     {!isUser && segmentMarkers.length > 0 && (
                       <div className="mb-1 flex flex-wrap gap-1">
                         {segmentMarkers.map((marker) => (
-                          <MarkerPin
-                            key={marker.id}
-                            marker={marker}
-                            onClick={() => handleMarkerClick(marker)}
-                            onRemove={() => removeMarker(marker.id)}
-                          />
+                          <div key={marker.id} data-marker-id={marker.id}>
+                            <MarkerPin
+                              marker={marker}
+                              onClick={() => handleMarkerClick(marker)}
+                              onRemove={() => removeMarker(marker.id)}
+                              onEdit={(label, color) => editMarker(marker.id, { label, color })}
+                            />
+                          </div>
                         ))}
                       </div>
                     )}
@@ -412,12 +414,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
                             return (
                               <div key={partIdx} className="my-1 flex flex-wrap gap-1">
                                 {part.markers.map((marker) => (
-                                  <MarkerPin
-                                    key={marker.id}
-                                    marker={marker}
-                                    onClick={() => handleMarkerClick(marker)}
-                                    onRemove={() => removeMarker(marker.id)}
-                                  />
+                                  <div key={marker.id} data-marker-id={marker.id}>
+                                    <MarkerPin
+                                      marker={marker}
+                                      onClick={() => handleMarkerClick(marker)}
+                                      onRemove={() => removeMarker(marker.id)}
+                                      onEdit={(label, color) => editMarker(marker.id, { label, color })}
+                                    />
+                                  </div>
                                 ))}
                               </div>
                             );

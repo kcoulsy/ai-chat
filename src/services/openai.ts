@@ -19,7 +19,7 @@ export function getOpenAI(): OpenAI {
 
 export async function* streamChatCompletion(
   messages: Pick<Message, 'role' | 'content'>[],
-  model: string = 'gpt-4o-mini'
+  model: string = 'gpt-5-mini'
 ): AsyncGenerator<string, void, unknown> {
   const client = getOpenAI();
   

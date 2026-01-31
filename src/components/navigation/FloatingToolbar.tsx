@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { MessageSquare, Bookmark, X } from 'lucide-react';
 import { useAppStore } from '../../store/useAppStore';
 import { useMarkers } from '../../hooks/useMarkers';
-import { categoryColors, categoryLabels, type MarkerCategory } from '../../types';
+import { markerColors, defaultMarkerColor } from '../../types';
 
 interface FloatingToolbarProps {
   selectedText: string;
@@ -16,7 +16,7 @@ interface FloatingToolbarProps {
 export function FloatingToolbar({ selectedText, rect, messageId, lineIndex, onClose, onCreateThread }: FloatingToolbarProps) {
   const [showMarkerDialog, setShowMarkerDialog] = useState(false);
   const [markerLabel, setMarkerLabel] = useState('');
-  const [markerCategory, setMarkerCategory] = useState<MarkerCategory>('note');
+  const [markerColor, setMarkerColor] = useState<string>(defaultMarkerColor);
   const { addMarker } = useMarkers();
   const currentChatId = useAppStore((state) => state.currentChatId);
 
@@ -24,7 +24,7 @@ export function FloatingToolbar({ selectedText, rect, messageId, lineIndex, onCl
 
   const handleCreateThread = () => {
     if (!currentChatId) return;
-    
+
     onCreateThread(selectedText, messageId, lineIndex);
     onClose();
     window.getSelection()?.removeAllRanges();
@@ -32,9 +32,10 @@ export function FloatingToolbar({ selectedText, rect, messageId, lineIndex, onCl
 
   const handleAddMarker = () => {
     if (markerLabel.trim()) {
-      addMarker(messageId, markerLabel.trim(), markerCategory, selectedText, lineIndex);
+      addMarker(messageId, markerLabel.trim(), markerColor, selectedText, lineIndex);
       setShowMarkerDialog(false);
       setMarkerLabel('');
+      setMarkerColor(defaultMarkerColor);
       onClose();
       window.getSelection()?.removeAllRanges();
     }
@@ -87,19 +88,18 @@ export function FloatingToolbar({ selectedText, rect, messageId, lineIndex, onCl
             autoFocus
           />
 
-          <div className="flex gap-1 mb-3">
-            {(Object.keys(categoryColors) as MarkerCategory[]).map((cat) => (
+          <div className="flex gap-1 mb-3 flex-wrap">
+            {markerColors.map((color) => (
               <button
-                key={cat}
-                onClick={() => setMarkerCategory(cat)}
-                className={`flex-1 text-[10px] py-1 px-1 rounded transition-colors ${
-                  markerCategory === cat
-                    ? `${categoryColors[cat]} text-primary-foreground`
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                key={color.value}
+                onClick={() => setMarkerColor(color.value)}
+                className={`w-6 h-6 rounded-full transition-all ${color.class} ${
+                  markerColor === color.value
+                    ? 'ring-2 ring-offset-2 ring-primary scale-110'
+                    : 'hover:scale-105'
                 }`}
-              >
-                {categoryLabels[cat]}
-              </button>
+                title={color.name}
+              />
             ))}
           </div>
 
